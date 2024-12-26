@@ -9,8 +9,22 @@
 //  this example may require changes.
 //
 
+#include <time.h>
 #include "headers/codecfactory.h"
 #include "headers/deltautil.h"
+
+double time_taken_in_secs(struct timespec t) {
+  struct timespec t_end;
+  clock_gettime(CLOCK_REALTIME, &t_end);
+  return (t_end.tv_sec - t.tv_sec) + (t_end.tv_nsec - t.tv_nsec) / 1e9;
+}
+
+struct timespec print_time_taken(struct timespec t, const char *msg) {
+  double time_taken = time_taken_in_secs(t); // in seconds
+  printf("%s %lf\n", msg, time_taken);
+  clock_gettime(CLOCK_REALTIME, &t);
+  return t;
+}
 
 int main(int argc, char *argv[]) {
   if (argc < 3) {
@@ -68,8 +82,12 @@ int main(int argc, char *argv[]) {
   //
   //
   size_t compressedsize = compressed_output.size();
+  struct timespec t;
+  clock_gettime(CLOCK_REALTIME, &t);
   codec.encodeArray(mydata.data(), mydata.size(), compressed_output.data(),
                     compressedsize);
+  printf("\nEncode kps: %lf\n", line_count / time_taken_in_secs(t) / 1000);
+  t = print_time_taken(t, "Time taken for encode: ");
   //
   // if desired, shrink back the array:
   compressed_output.resize(compressedsize);
@@ -89,8 +107,11 @@ int main(int argc, char *argv[]) {
   std::vector<uint32_t> mydataback(N);
   size_t recoveredsize = mydataback.size();
   //
+  clock_gettime(CLOCK_REALTIME, &t);
   codec.decodeArray(compressed_output.data(), compressed_output.size(),
                     mydataback.data(), recoveredsize);
+  printf("\nDecode kps: %lf\n", line_count / time_taken_in_secs(t) / 1000);
+  t = print_time_taken(t, "Time taken for decode: ");
   printf("Compressed size: %lu\n", compressed_output.size() * 4);
   mydataback.resize(recoveredsize);
   //
