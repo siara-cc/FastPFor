@@ -12,12 +12,23 @@
 #include "headers/codecfactory.h"
 #include "headers/deltautil.h"
 
-int main() {
+int main(int argc, char *argv[]) {
+  if (argc < 3) {
+    printf("Usage: example <codec> <input_file>\n  where codec is one of BP32 copy fastbinarypacking16 fastbinarypacking32 fastbinarypacking8 fastpfor128 fastpfor256 maskedvbyte newpfor optpfor pfor pfor2008 simdbinarypacking simdfastpfor128 simdfastpfor256 simdgroupsimple simdgroupsimple_ringbuf simdnewpfor simdoptpfor simdpfor simdsimplepfor simple16 simple8b simple8b_rle simple9 simple9_rle simplepfor streamvbyte varint varintg8iu varintgb vbyte vsencoding\n");
+    return 1;
+  }
+
   using namespace FastPForLib;
   CODECFactory factory;
 
   // We pick a CODEC
-  IntegerCODEC &codec = *factory.getFromName("simdfastpfor256");
+  //IntegerCODEC &codec = *factory.getFromName("simdfastpfor256");
+  //IntegerCODEC &codec = *factory.getFromName("fastpfor256");
+  //IntegerCODEC &codec = *factory.getFromName("streamvbyte");
+  IntegerCODEC &codec = *factory.getFromName(argv[2]);
+  //IntegerCODEC &codec = *factory.getFromName("simple8b");
+  //IntegerCODEC &codec = *factory.getFromName("simdbinarypacking");
+  //IntegerCODEC &codec = *factory.getFromName("varintg8iu");
   // could use others, e.g., "simdbinarypacking", "varintg8iu"
   ////////////
   //
@@ -28,10 +39,22 @@ int main() {
   //
   // (Note: You don't need to use a vector.)
   //
-  size_t N = 10 * 1000;
+   FILE *fp = fopen(argv[1], "rb");
+   char buffer[50];
+   size_t line_count = 0;
+   while (fgets(buffer, sizeof(buffer), fp) != NULL) {
+     line_count++;
+   }
+   rewind(fp);
+  size_t N = line_count;
+  size_t line = 0;
   std::vector<uint32_t> mydata(N);
-  for (uint32_t i = 0; i < N; i += 150)
-    mydata[i] = i;
+   while (fgets(buffer, sizeof(buffer), fp) != NULL) {
+     mydata[line++] = atoll(buffer);
+     //printf("%ld\n", mydata[line-1]);
+   }
+  //for (uint32_t i = 0; i < N; i += 150)
+  //  mydata[i] = i;
   //
   // the vector mydata could contain anything, really
   //
@@ -68,6 +91,7 @@ int main() {
   //
   codec.decodeArray(compressed_output.data(), compressed_output.size(),
                     mydataback.data(), recoveredsize);
+  printf("Compressed size: %lu\n", compressed_output.size() * 4);
   mydataback.resize(recoveredsize);
   //
   // That's it!
